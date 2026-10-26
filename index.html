@@ -153,7 +153,7 @@ ul.plain{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--fg2);max-wi
 <div class="wrap">
   <nav class="idx" aria-label="목차">
     <div class="brand"><b>NEXT</b> 시흥 API</div>
-    <div class="idx-sub">v1.1 · 기획서 v3 검수 반영 · 2026.10.25</div>
+    <div class="idx-sub">v1.2 · 외부 데이터 출처 변경 반영 · 2026.10.26</div>
     <div class="idx-group">공통</div>
     <ul>
       <li><a href="#overview">기본 규칙</a></li>
@@ -265,7 +265,8 @@ ul.plain{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--fg2);max-wi
           <tr><td class="nowrap"><code>Education</code><br>학력</td><td><code>HIGH_SCHOOL</code> 고졸 · <code>COLLEGE</code> 전문대졸 · <code>UNIVERSITY</code> 대졸 · <code>ANY</code> 무관</td></tr>
           <tr><td class="nowrap"><code>EmploymentType</code><br>고용형태</td><td><code>FULL_TIME</code> 정규직 · <code>CONTRACT</code> 계약직 · <code>INTERN</code> 인턴 · <code>PART_TIME</code> 시간제</td></tr>
           <tr><td class="nowrap"><code>RecruitStatus</code><br>모집상태</td><td><code>UPCOMING</code> 접수 예정 · <code>OPEN</code> 접수 중 · <code>CLOSED</code> 마감 · <code>ENDED</code> 종료(관리자 처리)</td></tr>
-          <tr><td class="nowrap"><code>PolicySource</code><br>정보 출처</td><td><code>ONTONG</code> 온통청년 API · <code>ADMIN</code> 관리자 직접 등록(시흥 지역 프로그램)</td></tr>
+          <tr><td class="nowrap"><code>PolicySource</code><br>정책 출처</td><td><code>ONTONG</code> 온통청년 API · <code>ADMIN</code> 관리자 직접 등록(시흥 지역 프로그램)</td></tr>
+          <tr><td class="nowrap"><code>JobSource</code><br>공고 출처</td><td><code>SARAMIN</code> 사람인 API(승인 시) · <code>ADMIN</code> 관리자 직접 등록</td></tr>
           <tr><td class="nowrap"><code>PostType</code><br>게시글 종류</td><td><code>PASS_REVIEW</code> 합격 후기 · <code>PROGRAM_REVIEW</code> 참여 후기 · <code>PORTFOLIO</code> 포트폴리오</td></tr>
           <tr><td class="nowrap"><code>PrepPeriod</code><br>준비 기간</td><td><code>WEEK_1</code> 1주 이내 · <code>MONTH_1</code> 1개월 · <code>MONTH_3</code> 3개월 · <code>MONTH_6_PLUS</code> 6개월 이상</td></tr>
           <tr><td class="nowrap"><code>ReportReason</code><br>신고 사유</td><td><code>PERSONAL_INFO</code> 개인정보 노출 · <code>SPAM</code> 광고 · <code>ABUSE</code> 욕설·비방 · <code>FALSE_INFO</code> 허위 정보 · <code>ETC</code> 기타</td></tr>
@@ -287,12 +288,21 @@ ul.plain{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--fg2);max-wi
           <tr><td>④ 진행상태 관리</td><td>1</td><td><code>PATCH /roadmap-items/{itemId}/status</code>, 활동 기록</td><td class="nowrap">한동혁 · 9주차</td></tr>
           <tr><td>⑤ NEXT 캘린더</td><td>2</td><td><code>/calendar/events</code> 4개</td><td class="nowrap">한동혁 · 9주차</td></tr>
           <tr><td>⑥ 관리자 정책·프로그램 관리</td><td>2</td><td><code>/admin/policies</code> 5개 (등록·수정·종료·확인일 갱신)</td><td class="nowrap">강준 · 7주차</td></tr>
-          <tr><td>⑦ 맞춤 채용공고</td><td>2</td><td><code>/jobs</code> 5개, 고용24 수집 스케줄러</td><td class="nowrap">강준 · 10주차</td></tr>
+          <tr><td>⑦ 맞춤 채용공고</td><td>2</td><td><code>/jobs</code> 5개, <code>/admin/jobs</code> 3개(등록·수정·마감), 사람인 수집 스케줄러(승인 시)</td><td class="nowrap">강준 · 10주차</td></tr>
           <tr><td>⑧ 경험 공유 커뮤니티</td><td>2</td><td><code>/posts</code> 6개(신고 포함), 관리자 숨김</td><td class="nowrap">한동혁 · 11주차</td></tr>
           <tr><td>⑨ 알림 센터</td><td>2</td><td><code>/notifications</code> 4개, 알림 생성 배치</td><td class="nowrap">한동혁 · 11주차</td></tr>
           <tr><td>3-3 내 기록 · 8-3 운영 지표</td><td>2</td><td><code>GET /roadmaps/me/history</code>, <code>GET /users/me/posts</code>, <code>GET /admin/stats</code></td><td class="nowrap">한동혁 · 강준</td></tr>
         </tbody>
       </table></div>
+
+      <h3 class="sub">v1.2에서 고친 것</h3>
+      <ul class="plain">
+        <li><span class="fix">수정</span> 온통청년 API 응답 형식: XML이 아니라 JSON(<code>rtnType=json</code>)으로 받음</li>
+        <li><span class="fix">수정</span> 채용공고 출처: '고용24 채용정보' → '사람인(승인 시) 또는 관리자 등록'. 공고 출처 enum <code>JobSource</code> 추가</li>
+        <li><span class="fix">수정</span> <code>GET /jobs/recommended</code>의 <code>dataSource</code>: 고정 문자열 대신 공고의 <code>source</code> 값(<code>JobSource</code>)</li>
+        <li><span class="add">추가</span> <code>POST /admin/jobs</code>, <code>PUT /admin/jobs/{jobId}</code>, <code>PATCH /admin/jobs/{jobId}/close</code>: 사람인 승인이 안 나면 이 API로 시연 데이터 등록</li>
+        <li><span class="fix">수정</span> <code>POST /admin/sync/{source}</code>의 source에 <code>saramin</code> 추가(고용24 수집이 빠져 <code>work24</code>는 제거)</li>
+      </ul>
 
       <h3 class="sub">v1.1에서 고친 것</h3>
       <ul class="plain">
@@ -313,6 +323,7 @@ ul.plain{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--fg2);max-wi
         <li>진행상태는 단계를 건너뛰거나 되돌리는 것을 허용</li>
         <li>관심분야에 '문화·생활'(<code>CULTURE_LIFE</code>) 추가: 제안서 목록은 '취업, 교육, 주거, 금융, 상담 등'</li>
         <li>로드맵 템플릿 관리 API와 외부 데이터 수동 수집 API: 제안서의 '사전에 정의·검증된 템플릿'과 시연 준비를 위해 추가</li>
+        <li>관리자 공고 등록·수정·마감 API: 사람인 API 승인 전·미승인 시 시연 데이터 입력용</li>
         <li>회원 탈퇴 API</li>
       </ul>
     </section>
@@ -342,12 +353,12 @@ ul.plain{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--fg2);max-wi
 
     <section class="block" id="batch">
       <h2>스케줄러·외부 API 연동</h2>
-      <p class="sec-lead">Spring Scheduler가 외부 데이터를 정기 수집하고 알림을 만듭니다. 인증키 승인 전에는 같은 테이블에 샘플 데이터를 넣어 두고 개발하며, 화면 쪽 API는 출처와 상관없이 그대로 동작합니다.</p>
+      <p class="sec-lead">Spring Scheduler가 외부 데이터를 정기 수집하고 알림을 만듭니다. 인증키 승인 전에는 같은 테이블에 샘플 데이터를 넣어 두고 개발하며, 화면 쪽 API는 출처와 상관없이 그대로 동작합니다. 채용공고는 사람인 API 승인이 나지 않으면 관리자가 <code>/admin/jobs</code>로 직접 등록합니다.</p>
       <div class="tbl"><table>
         <thead><tr><th>작업</th><th>주기</th><th>처리 내용</th><th>결과</th></tr></thead>
         <tbody>
-          <tr><td class="nowrap">청년정책 수집</td><td class="nowrap mono">매일 03:00</td><td>온통청년 Open API(XML)에서 전국·경기도 청년정책을 받아 <code>policy</code>에 저장. 같은 정책 ID는 갱신, 접수기간이 지난 정책은 <code>CLOSED</code></td><td><code>source=ONTONG</code>, <code>lastVerifiedAt</code> 갱신</td></tr>
-          <tr><td class="nowrap">채용공고 수집</td><td class="nowrap mono">매일 04:00</td><td>고용24 채용정보 Open API에서 시흥·인접 지역 신입 가능 공고 수집. 지역·학력·경력·고용형태·마감일을 정해진 칸으로 정리하고 직무명은 직무 사전으로 통일(예: 웹개발, 백엔드 → <code>IT</code>)</td><td><code>job_posting</code> 저장, 공고별 도움 되는 정책 태그 매칭</td></tr>
+          <tr><td class="nowrap">청년정책 수집</td><td class="nowrap mono">매일 03:00</td><td>온통청년 Open API(JSON, <code>rtnType=json</code>)에서 전국·경기도 청년정책을 받아 <code>policy</code>에 저장. 같은 정책 ID는 갱신, 접수기간이 지난 정책은 <code>CLOSED</code></td><td><code>source=ONTONG</code>, <code>lastVerifiedAt</code> 갱신</td></tr>
+          <tr><td class="nowrap">채용공고 수집</td><td class="nowrap mono">매일 04:00</td><td>사람인 채용공고 API(승인 시)에서 시흥·인접 지역 신입 가능 공고 수집. 지역·학력·경력·고용형태·마감일을 정해진 칸으로 정리하고 직무명은 직무 사전으로 통일(예: 웹개발, 백엔드 → <code>IT</code>). 승인 전·미승인 시에는 수집하지 않고 관리자 등록 공고만 사용</td><td><code>job_posting</code> 저장(<code>source=SARAMIN</code>), 공고별 도움 되는 정책 태그 매칭</td></tr>
           <tr><td class="nowrap">새 맞춤 공고 알림</td><td class="nowrap mono">채용 수집 직후</td><td>사용자별 저장 조건과 비교해 마지막 접속 이후 새로 맞는 공고 수를 계산</td><td><code>NEW_JOB</code> 알림 1건 (예: "조건에 맞는 새 공고 3건")</td></tr>
           <tr><td class="nowrap">마감 임박 알림</td><td class="nowrap mono">매일 09:00</td><td>로드맵 항목·관심 공고·직접 일정 중 마감이 D-7, D-3, D-1인 것</td><td><code>DEADLINE</code> 알림</td></tr>
           <tr><td class="nowrap">새 후기 알림</td><td class="nowrap mono">게시글 등록 시</td><td>글에 연결된 정책·공고를 로드맵이나 관심 저장에 둔 사용자에게 발송 (작성자 본인 제외)</td><td><code>NEW_REVIEW</code> 알림</td></tr>
@@ -366,14 +377,16 @@ const DOMAINS = [
   {id:"profile", name:"상태 등록·온보딩", own:"한동혁 · 6주차", desc:"현재 상황, 관심분야, 희망 채용 조건을 선택형으로 등록합니다. 등록하면 로드맵이 바로 만들어집니다."},
   {id:"roadmap", name:"로드맵·진행상태", own:"강준(로드맵 8주차) · 한동혁(진행상태 9주차)", desc:"메인 화면 데이터와 로드맵 항목의 6단계 진행상태를 다룹니다."},
   {id:"policy", name:"정책·프로그램", own:"강준 · 7주차", desc:"정책 목록과 상세. 상세에는 공식 신청 URL, 마지막 확인일, 관련 후기와 채용공고가 함께 옵니다."},
-  {id:"job", name:"맞춤 채용", own:"강준 · 10주차", desc:"고용24 공고를 사용자 조건으로 거른 목록과, 공고마다 도움 되는 정책 연결."},
+  {id:"job", name:"맞춤 채용", own:"강준 · 10주차", desc:"사람인 수집 공고(승인 시)와 관리자 등록 공고를 사용자 조건으로 거른 목록과, 공고마다 도움 되는 정책 연결."},
   {id:"post", name:"커뮤니티", own:"한동혁 · 11주차", desc:"합격 후기, 참여 후기, 포트폴리오. 글은 정책·공고·직무 태그로 연결됩니다."},
   {id:"calendar", name:"NEXT 캘린더", own:"한동혁 · 9주차", desc:"로드맵 항목과 관심 공고의 일정을 한 캘린더로 모읍니다."},
   {id:"noti", name:"알림 센터", own:"한동혁 · 11주차", desc:"서비스 안 알림. 이메일·푸시는 3순위라 이번 범위에 없습니다."},
-  {id:"admin", name:"관리자", own:"강준 · 7주차 (수집 10주차)", desc:"정책·프로그램 관리, 로드맵 템플릿, 신고 처리, 외부 데이터 수동 수집."}
+  {id:"admin", name:"관리자", own:"강준 · 7주차 (공고·수집 10주차)", desc:"정책·프로그램 관리, 채용공고 등록, 로드맵 템플릿, 신고 처리, 외부 데이터 수동 수집."}
 ];
 
 const policySummary = {policyId:12, title:"청년 직무역량 아카데미", field:"EMPLOYMENT", agency:"시흥시청소년청년재단", applyStartDate:"2026-10-20", applyEndDate:"2026-11-05", recruitStatus:"OPEN", dDay:11};
+
+const jobBody = {company:"(주)시흥테크",title:"사무직 신입 채용",region:"SIHEUNG",address:"경기 시흥시 정왕동",education:"UNIVERSITY",careerLevel:"NEW",employmentType:"FULL_TIME",jobCategory:"OFFICE",salary:"회사 내규",deadline:"2026-11-01",originalUrl:"https://..."};
 
 const E = [
 /* ---------- auth ---------- */
@@ -480,15 +493,15 @@ const E = [
  desc:"저장된 채용 조건과 일치하는 공고를 돌려줍니다. 공고마다 '이 공고에 도움 되는 지원'과 그 정책의 내 진행상태가 붙어 옵니다.",
  query:[["sort","String","N","deadline(기본) · latest"],["page, size","Integer","N","페이지"]],
  res:{appliedFilter:{regions:["SIHEUNG","ANSAN"],education:"UNIVERSITY",careerLevel:"NEW",jobCategories:["OFFICE","IT"],employmentTypes:["FULL_TIME"]},
-   content:[{jobId:5512,company:"(주)시흥테크",title:"사무직 신입 채용",region:"SIHEUNG",education:"UNIVERSITY",careerLevel:"NEW",employmentType:"FULL_TIME",jobCategory:"OFFICE",deadline:"2026-11-01",dDay:7,bookmarked:false,isNew:true,
+   content:[{jobId:5512,company:"(주)시흥테크",title:"사무직 신입 채용",region:"SIHEUNG",education:"UNIVERSITY",careerLevel:"NEW",employmentType:"FULL_TIME",jobCategory:"OFFICE",deadline:"2026-11-01",dDay:7,bookmarked:false,isNew:true,dataSource:"SARAMIN",
      helpfulPolicies:[{policyId:21,title:"청년 자격증 응시료 지원",myStatus:"INTERESTED"}]}],
-   page:0,size:20,totalElements:23,totalPages:2,hasNext:true,dataSource:"고용24 채용정보"},
- notes:["isNew: 마지막 접속 이후 새로 들어온 공고"],
+   page:0,size:20,totalElements:23,totalPages:2,hasNext:true},
+ notes:["isNew: 마지막 접속 이후 새로 들어온 공고","dataSource: 공고의 source 값(JobSource: SARAMIN · ADMIN). 출처 표시 문구는 프론트에서 매핑"],
  err:["ONBOARDING_REQUIRED"]},
 {d:"job",m:"GET",p:"/jobs/{jobId}",a:"U?",pr:2,t:"채용공고 상세",
  desc:"공고 원문 링크와 함께, 도움 되는 정책과 같은 직무의 합격 후기를 줍니다.",
  path:[["jobId","Long","공고 ID"]],
- res:{jobId:5512,company:"(주)시흥테크",title:"사무직 신입 채용",region:"SIHEUNG",address:"경기 시흥시 정왕동",education:"UNIVERSITY",careerLevel:"NEW",employmentType:"FULL_TIME",jobCategory:"OFFICE",salary:"회사 내규",deadline:"2026-11-01",dDay:7,originalUrl:"https://www.work24.go.kr/...",bookmarked:true,
+ res:{jobId:5512,company:"(주)시흥테크",title:"사무직 신입 채용",region:"SIHEUNG",address:"경기 시흥시 정왕동",education:"UNIVERSITY",careerLevel:"NEW",employmentType:"FULL_TIME",jobCategory:"OFFICE",salary:"회사 내규",deadline:"2026-11-01",dDay:7,originalUrl:"https://www.saramin.co.kr/...",dataSource:"SARAMIN",bookmarked:true,
    helpfulPolicies:[{policyId:21,title:"청년 자격증 응시료 지원",myStatus:"INTERESTED"}],
    reviews:[{postId:322,type:"PASS_REVIEW",rating:4,oneLiner:"컴활 1급이 도움됐어요",jobCategory:"OFFICE"}]},
  err:["JOB_NOT_FOUND"]},
@@ -580,6 +593,20 @@ const E = [
 {d:"admin",m:"PATCH",p:"/admin/policies/{policyId}/verify",a:"A",pr:2,t:"정보 확인 완료",
  desc:"내용 변경 없이 공식 사이트와 대조만 했을 때 마지막 확인일을 오늘로 갱신합니다.",
  path:[["policyId","Long","정책 ID"]],res:{policyId:12,lastVerifiedAt:"2026-10-25"}},
+{d:"admin",m:"POST",p:"/admin/jobs",a:"A",pr:2,t:"채용공고 등록",
+ desc:"사람인 API 승인이 나지 않았거나 승인 전일 때 시연용 공고를 직접 넣습니다. 요청 본문은 job_posting 컬럼과 같고, 저장된 공고는 source=ADMIN으로 맞춤 채용 목록에 수집 공고와 똑같이 나옵니다.",
+ body:jobBody,
+ res:{jobId:5600,source:"ADMIN",closed:false},
+ notes:["jobCategory는 JobCategory, region은 Region enum 값으로 받음","education은 Education, employmentType은 EmploymentType enum 값","source는 서버가 ADMIN으로 채움"],
+ err:["INVALID_INPUT"],status:201},
+{d:"admin",m:"PUT",p:"/admin/jobs/{jobId}",a:"A",pr:2,t:"채용공고 수정",
+ desc:"등록과 같은 본문 전체를 보냅니다.",
+ path:[["jobId","Long","공고 ID"]],body:"/* POST /admin/jobs와 같은 형식 */",res:{jobId:5600,source:"ADMIN",closed:false},
+ err:["JOB_NOT_FOUND","INVALID_INPUT"]},
+{d:"admin",m:"PATCH",p:"/admin/jobs/{jobId}/close",a:"A",pr:2,t:"채용공고 마감",
+ desc:"마감일 전이라도 공고를 마감 처리합니다. 맞춤 채용 목록에서 빠지고, 관심 공고 목록에는 closed: true로 남습니다.",
+ path:[["jobId","Long","공고 ID"]],res:{jobId:5600,closed:true},
+ err:["JOB_NOT_FOUND"]},
 {d:"admin",m:"GET",p:"/admin/roadmap-templates",a:"A",pr:2,t:"로드맵 템플릿 목록",
  desc:"상황·관심분야 조합별로 미리 만든 템플릿입니다.",
  res:[{templateId:3,name:"졸업 예정 · 취업 준비 · 취업/주거",lifeStages:["GRADUATING","JOB_SEEKING"],interests:["EMPLOYMENT","HOUSING"],stepCount:5,userCount:41}]},
@@ -601,10 +628,11 @@ const E = [
  notes:["revisitRate7d: 가입 후 7일 안에 다시 접속한 사용자 비율","topPrograms: 프로그램별 관심 등록 수·후기 수 (지역 기관 제공용)"]},
 {d:"admin",m:"POST",p:"/admin/sync/{source}",a:"A",pr:2,t:"외부 데이터 수동 수집",
  desc:"스케줄러를 기다리지 않고 바로 수집합니다. 시연 전이나 API 키 발급 직후에 씁니다.",
- path:[["source","String","ontong · work24"]],res:{syncLogId:58,source:"WORK24",startedAt:"2026-10-25T15:02:00",status:"RUNNING"},status:202},
+ path:[["source","String","ontong · saramin"]],res:{syncLogId:58,source:"SARAMIN",startedAt:"2026-10-25T15:02:00",status:"RUNNING"},
+ notes:["saramin은 사람인 API 승인 후에만 동작"],status:202},
 {d:"admin",m:"GET",p:"/admin/sync/logs",a:"A",pr:2,t:"수집 기록",
  desc:"자동·수동 수집 결과를 최신순으로 보여줍니다.",
- res:[{syncLogId:58,source:"WORK24",trigger:"MANUAL",startedAt:"2026-10-25T15:02:00",finishedAt:"2026-10-25T15:02:41",status:"SUCCESS",fetched:214,inserted:12,updated:30,failed:0}]}
+ res:[{syncLogId:58,source:"SARAMIN",trigger:"MANUAL",startedAt:"2026-10-25T15:02:00",finishedAt:"2026-10-25T15:02:41",status:"SUCCESS",fetched:214,inserted:12,updated:30,failed:0}]}
 ];
 
 const $ = s => document.querySelector(s);
