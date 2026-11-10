@@ -153,7 +153,7 @@ ul.plain{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--fg2);max-wi
 <div class="wrap">
   <nav class="idx" aria-label="목차">
     <div class="brand"><b>NEXT</b> 시흥 API</div>
-    <div class="idx-sub">v1.5 · 잡아바 채용정보 · ERD 정리 · 2026.11.04</div>
+    <div class="idx-sub">v1.6 · 구현 결과 반영 · 2026.11.10</div>
     <div class="idx-group">공통</div>
     <ul>
       <li><a href="#overview">기본 규칙</a></li>
@@ -235,7 +235,9 @@ ul.plain{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--fg2);max-wi
           <tr><td>401</td><td><code>LOGIN_FAILED</code></td><td>이메일 또는 비밀번호 불일치</td></tr>
           <tr><td>403</td><td><code>FORBIDDEN</code></td><td>권한 없음 (남의 글 수정, 일반 사용자의 관리자 API 호출)</td></tr>
           <tr><td>403</td><td><code>ONBOARDING_REQUIRED</code></td><td>상태 등록 전에 로드맵·맞춤 채용 호출</td></tr>
-          <tr><td>404</td><td><code>*_NOT_FOUND</code></td><td><code>POLICY_NOT_FOUND</code>, <code>JOB_NOT_FOUND</code>, <code>POST_NOT_FOUND</code> 등</td></tr>
+          <tr><td>404</td><td><code>*_NOT_FOUND</code></td><td><code>POLICY_NOT_FOUND</code>, <code>JOB_NOT_FOUND</code>, <code>POST_NOT_FOUND</code>, <code>ROADMAP_NOT_FOUND</code>, <code>ROADMAP_ITEM_NOT_FOUND</code>, <code>EVENT_NOT_FOUND</code>, <code>NOTIFICATION_NOT_FOUND</code></td></tr>
+          <tr><td>404</td><td><code>NOT_FOUND</code></td><td>없는 주소로 요청함</td></tr>
+          <tr><td>405</td><td><code>METHOD_NOT_ALLOWED</code></td><td>주소는 있지만 지원하지 않는 HTTP 메서드</td></tr>
           <tr><td>409</td><td><code>DUPLICATE_EMAIL</code></td><td>이미 가입한 이메일</td></tr>
           <tr><td>409</td><td><code>ALREADY_EXISTS</code></td><td>이미 로드맵에 추가했거나 저장·신고·좋아요한 항목</td></tr>
           <tr><td>422</td><td><code>POLICY_ENDED</code></td><td>종료된 정책을 로드맵에 추가하려 함</td></tr>
@@ -296,6 +298,18 @@ ul.plain{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--fg2);max-wi
           <tr><td>3-3 내 기록 · 8-3 운영 지표</td><td>2</td><td><code>GET /roadmaps/me/history</code>, <code>GET /users/me/posts</code>, <code>GET /admin/stats</code></td><td class="nowrap">한동혁 · 강준</td></tr>
         </tbody>
       </table></div>
+
+      <h3 class="sub">v1.6에서 고친 것 (2026.11.10, 구현 결과 반영)</h3>
+      <ul class="plain">
+        <li><span class="fix">추가</span> <code>GET /admin/jobs</code> 관리자 채용공고 목록 (출처·마감 여부·검색어 필터)</li>
+        <li><span class="fix">추가</span> 에러 코드 <code>NOTIFICATION_NOT_FOUND</code>(알림 읽음 처리), <code>NOT_FOUND</code>(없는 주소), <code>METHOD_NOT_ALLOWED</code>(지원하지 않는 메서드)</li>
+        <li><span class="fix">수정</span> 청년정책 수집: 전국·경기도 정책 전체가 아니라 <b>시흥시(지역 코드 41390) 청년이 신청할 수 있는 정책</b>만 저장. 경기도 밖 광역지자체 정책·마감 정책 제외, 이번 수집에 빠진 접수 중 정책은 종료 처리</li>
+        <li><span class="fix">수정</span> 로드맵 템플릿: 단계마다 정책 ID 대신 <b>분야 + 키워드 규칙</b>으로 실제 정책을 최대 3개 연결 (서버 시작 직후·정책 수집 직후 다시 연결)</li>
+        <li><span class="fix">수정</span> 마감 임박 알림 대상: 캘린더 일정 기준. 접수 시작 일정과 이미 신청(<code>APPLIED</code> 이후)한 로드맵 항목의 접수 마감은 제외</li>
+        <li><span class="fix">수정</span> 채용공고 상세 <code>reviews</code>: 이 공고에 달렸거나 같은 직무인 합격 후기 최신 3개</li>
+        <li><span class="fix">수정</span> 오래된 정보(<code>stale</code>)는 주간 배치가 아니라 조회할 때 계산</li>
+        <li><span class="fix">수정</span> 인증키 승인 전 샘플 데이터 방식 삭제 (실제 수집 데이터만 사용)</li>
+      </ul>
 
       <h3 class="sub">v1.5에서 고친 것 (2026.11.04, 채용공고 출처 변경 · ERD 정리)</h3>
       <ul class="plain">
@@ -384,20 +398,20 @@ ul.plain{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--fg2);max-wi
 
     <section class="block" id="batch">
       <h2>스케줄러·외부 API 연동</h2>
-      <p class="sec-lead">Spring Scheduler가 외부 데이터를 정기 수집하고 알림을 만듭니다. 인증키 승인 전에는 같은 테이블에 샘플 데이터를 넣어 두고 개발하며, 화면 쪽 API는 출처와 상관없이 그대로 동작합니다. 채용공고는 잡아바 수집 공고에 더해, 필요한 공고를 관리자가 <code>/admin/jobs</code>로 직접 등록합니다(<code>source=ADMIN</code>). 자동 수집 결과는 매번 <code>sync_log</code>에 남습니다.</p>
+      <p class="sec-lead">Spring Scheduler가 외부 데이터를 정기 수집하고 알림을 만듭니다. 스케줄은 <code>app.batch.enabled=true</code>일 때만 돌아갑니다. 채용공고는 잡아바 수집 공고에 더해, 필요한 공고를 관리자가 <code>/admin/jobs</code>로 직접 등록합니다(<code>source=ADMIN</code>). 자동 수집 결과는 매번 <code>sync_log</code>에 남습니다.</p>
       <div class="tbl"><table>
         <thead><tr><th>작업</th><th>주기</th><th>처리 내용</th><th>결과</th></tr></thead>
         <tbody>
-          <tr><td class="nowrap">청년정책 수집</td><td class="nowrap mono">매일 03:00</td><td>온통청년 Open API(JSON, <code>rtnType=json</code>)에서 전국·경기도 청년정책을 받아 <code>policy</code>에 저장. 같은 정책 ID는 갱신, 접수기간이 지난 정책은 <code>CLOSED</code></td><td><code>source=ONTONG</code>, <code>lastVerifiedAt</code> 갱신</td></tr>
+          <tr><td class="nowrap">청년정책 수집</td><td class="nowrap mono">매일 03:00</td><td>온통청년 Open API(JSON, <code>rtnType=json</code>)에서 시흥시(지역 코드 41390) 청년이 신청할 수 있는 정책을 받아 <code>policy</code>에 저장. 같은 정책 번호는 갱신. 마감 정책과 경기도 밖 광역지자체가 주관한 정책은 제외. 이번 수집에 오지 않은 접수 중 정책은 종료 처리(전체 페이지를 받았을 때만), 관리자가 종료한 정책은 다시 와도 종료 유지</td><td><code>source=ONTONG</code>, <code>lastVerifiedAt</code> 갱신, 공고-정책 매칭과 로드맵 템플릿 정책 다시 연결</td></tr>
           <tr><td class="nowrap">채용공고 수집</td><td class="nowrap mono">매일 04:00</td><td>경기데이터드림 「경기도일자리재단 잡아바 채용정보」(<code>GGJOBABARECRUSTM</code>, JSON)에서 시흥·안산·부천·광명·인천 지역의 접수 중인 신입 가능 공고 수집. 최신 공고가 마지막 페이지에 쌓이므로 마지막 페이지부터 거꾸로 최대 30페이지(1,000건씩)를 읽음. 공고 ID가 없어 원문 URL의 SHA-256으로 같은 공고를 구분해 갱신. 지역·학력(여러 개면 가장 낮은 학력)·고용형태·마감일을 정해진 칸으로 정리하고 직무는 모집분야명(없으면 공고 제목) 키워드로 통일(예: 설치·정비·생산직 → <code>MANUFACTURING</code>)</td><td><code>job_posting</code> 저장(<code>source=JOBABA</code>), 공고별 도움 되는 정책 태그 매칭</td></tr>
           <tr><td class="nowrap">새 맞춤 공고 알림</td><td class="nowrap mono">채용 수집 직후</td><td>사용자별 저장 조건과 비교해 직전 방문일(<code>user_visit</code>) 이후 새로 맞는 공고 수를 계산</td><td><code>NEW_JOB</code> 알림 1건 (예: "조건에 맞는 새 공고 3건")</td></tr>
-          <tr><td class="nowrap">마감 임박 알림</td><td class="nowrap mono">매일 09:00</td><td>로드맵 항목·관심 공고·직접 일정 중 마감이 D-7, D-3, D-day(당일)인 것</td><td><code>DEADLINE</code> 알림</td></tr>
-          <tr><td class="nowrap">새 후기 알림</td><td class="nowrap mono">게시글 등록 시</td><td>글에 연결된 정책·공고를 로드맵이나 관심 저장에 둔 사용자에게 발송 (작성자 본인 제외)</td><td><code>NEW_REVIEW</code> 알림</td></tr>
-          <tr><td class="nowrap">오래된 정보 점검</td><td class="nowrap mono">매주 월 09:00</td><td>관리자 등록 정책 중 마지막 확인일이 30일을 넘은 것을 표시</td><td>관리자 목록 <code>stale=true</code> 필터에 노출</td></tr>
+          <tr><td class="nowrap">마감 임박 알림</td><td class="nowrap mono">매일 09:00</td><td>캘린더 일정(로드맵 항목의 접수 마감·관심 공고의 채용 마감·직접 추가한 일정) 중 날짜가 D-7, D-3, D-day(당일)인 것. 접수 시작 일정과 이미 신청(<code>APPLIED</code> 이후)한 로드맵 항목은 제외. 같은 날 다시 돌아도 한 번만 보냄</td><td><code>DEADLINE</code> 알림 (예: "청년 직무역량 아카데미 접수 마감 D-3", 링크는 정책·공고 상세 또는 캘린더)</td></tr>
+          <tr><td class="nowrap">새 후기 알림</td><td class="nowrap mono">게시글 등록 시</td><td>글에 연결된 정책을 현재 로드맵에 담았거나 공고를 관심 저장한 사용자에게 발송 (작성자 본인 제외, 둘 다 해당하면 1건)</td><td><code>NEW_REVIEW</code> 알림 (예: "청년 직무역량 아카데미에 새 후기가 올라왔어요", 본문은 한 줄 평, 링크는 게시글)</td></tr>
+          <tr><td class="nowrap">오래된 정보 점검</td><td class="nowrap mono">조회할 때</td><td>마지막 확인일이 30일을 넘은 정책을 표시 (배치 없이 목록을 조회할 때 계산)</td><td>관리자 목록 <code>stale=true</code> 필터에 노출</td></tr>
         </tbody>
       </table></div>
       <h3 class="sub">로드맵 생성 규칙</h3>
-      <p class="sec-lead">AI 판단이 아니라 규칙 기반입니다. DB에 미리 넣어 둔(seed) 로드맵 템플릿 중 사용자의 <code>LifeStage</code>와 <code>InterestField</code>가 가장 많이 겹치는 것을 고르고, 단계마다 연결된 정책 중 <code>ENDED</code>가 아닌 것을 로드맵 항목(<code>TO_CHECK</code>)으로 복사합니다. 상황을 바꾸면 기존 로드맵은 <code>archived=true</code>로 남기고 새 템플릿으로 다시 만듭니다.</p>
+      <p class="sec-lead">AI 판단이 아니라 규칙 기반입니다. 서버가 만들어 두는 로드맵 템플릿(4개) 중 사용자의 <code>LifeStage</code>와 <code>InterestField</code>가 가장 많이 겹치는 것을 고르고, 단계마다 분야 + 키워드 규칙으로 연결된 실제 정책(최대 3개) 중 <code>ENDED</code>가 아닌 것을 로드맵 항목(<code>TO_CHECK</code>)으로 복사합니다. 상황을 바꾸면 기존 로드맵은 <code>archived=true</code>로 남기고 새 템플릿으로 다시 만듭니다.</p>
     </section>
   </main>
 </div>
@@ -540,7 +554,7 @@ const E = [
  res:{jobId:5512,company:"(주)시흥테크",title:"사무직 신입 채용",region:"SIHEUNG",address:"경기 시흥시 정왕동",education:"UNIVERSITY",careerLevel:"NEW",employmentType:"FULL_TIME",jobCategory:"OFFICE",salary:"회사 내규",deadline:"2026-11-01",dDay:7,originalUrl:"https://job.gg.go.kr/empmn/jobEntDtl.do?seq=14572",dataSource:"JOBABA",bookmarked:true,
    helpfulPolicies:[{policyId:21,title:"청년 자격증 응시료 지원",myStatus:"INTERESTED"}],
    reviews:[{postId:322,type:"PASS_REVIEW",rating:4,oneLiner:"컴활 1급이 도움됐어요",jobCategory:"OFFICE"}]},
- notes:["originalUrl은 잡아바가 준 원문 링크(잡코리아·고용24·잡아바 등)","잡아바 공고의 address는 시·군 단위(예: 시흥시)","상시채용 공고는 deadline·dDay가 null"],
+ notes:["reviews: 이 공고에 달렸거나 같은 직무(jobCategory)인 합격 후기 최신 3개 (삭제·숨김 글 제외)","originalUrl은 잡아바가 준 원문 링크(잡코리아·고용24·잡아바 등)","잡아바 공고의 address는 시·군 단위(예: 시흥시)","상시채용 공고는 deadline·dDay가 null"],
  err:["JOB_NOT_FOUND"]},
 {d:"job",m:"POST",p:"/jobs/{jobId}/bookmark",a:"U",pr:2,t:"관심 공고 저장",
  desc:"북마크하면 공고 마감일이 캘린더에 JOB_DEADLINE으로 등록됩니다.",
@@ -616,9 +630,11 @@ const E = [
 {d:"noti",m:"GET",p:"/notifications",a:"U",pr:2,t:"알림 목록",
  desc:"헤더 종 아이콘의 드롭다운에 씁니다. link로 이동할 화면을 정합니다.",
  query:[["type","NotificationType","N","종류 필터"],["page, size","Integer","N","기본 size 20"]],
- res:{content:[{notificationId:1203,type:"DEADLINE",title:"자격증 응시료 지원 신청 마감 D-3",body:"청년 자격증 응시료 지원 신청이 3일 남았어요.",link:{targetType:"POLICY",targetId:21},read:false,createdAt:"2026-10-25T09:00:00"},{notificationId:1199,type:"NEW_JOB",title:"조건에 맞는 새 공고 3건",body:"시흥·안산 사무직 신입 공고가 새로 올라왔어요.",link:{targetType:"JOB_LIST",targetId:null},read:true,createdAt:"2026-10-25T04:05:00"}],page:0,size:20,totalElements:15,totalPages:1,hasNext:false}},
+ res:{content:[{notificationId:1203,type:"DEADLINE",title:"자격증 응시료 지원 신청 마감 D-3",body:"청년 자격증 응시료 지원 신청이 3일 남았어요.",link:{targetType:"POLICY",targetId:21},read:false,createdAt:"2026-10-25T09:00:00"},{notificationId:1199,type:"NEW_JOB",title:"조건에 맞는 새 공고 3건",body:"시흥·안산 사무직 신입 공고가 새로 올라왔어요.",link:{targetType:"JOB_LIST",targetId:null},read:true,createdAt:"2026-10-25T04:05:00"}],page:0,size:20,totalElements:15,totalPages:1,hasNext:false},
+ notes:["link.targetType: POLICY · JOB · POST(targetId 있음), JOB_LIST · CALENDAR(targetId null)","DEADLINE 제목은 일정 이름 + D-7 · D-3 · D-day"]},
 {d:"noti",m:"GET",p:"/notifications/unread-count",a:"U",pr:2,t:"안 읽은 알림 수",desc:"헤더 빨간 점 숫자입니다. 화면 이동 시마다 가볍게 호출합니다.",res:{unreadCount:4}},
-{d:"noti",m:"PATCH",p:"/notifications/{notificationId}/read",a:"U",pr:2,t:"알림 읽음 처리",desc:"알림을 눌러 이동할 때 호출합니다.",path:[["notificationId","Long","알림 ID"]],res:{notificationId:1203,read:true}},
+{d:"noti",m:"PATCH",p:"/notifications/{notificationId}/read",a:"U",pr:2,t:"알림 읽음 처리",desc:"알림을 눌러 이동할 때 호출합니다. 이미 읽은 알림이면 그대로 둡니다.",path:[["notificationId","Long","알림 ID"]],res:{notificationId:1203,read:true},
+ err:["NOTIFICATION_NOT_FOUND","FORBIDDEN"]},
 {d:"noti",m:"PATCH",p:"/notifications/read-all",a:"U",pr:2,t:"모두 읽음",desc:"",res:{updatedCount:4}},
 
 /* ---------- admin ---------- */
@@ -641,6 +657,11 @@ const E = [
 {d:"admin",m:"PATCH",p:"/admin/policies/{policyId}/verify",a:"A",pr:2,t:"정보 확인 완료",
  desc:"내용 변경 없이 공식 사이트와 대조만 했을 때 마지막 확인일을 오늘로 갱신합니다.",
  path:[["policyId","Long","정책 ID"]],res:{policyId:12,lastVerifiedAt:"2026-10-25"}},
+{d:"admin",m:"GET",p:"/admin/jobs",a:"A",pr:2,t:"채용공고 관리 목록",
+ desc:"잡아바 수집 공고와 관리자 등록 공고를 최근 등록(수집)순으로 보여줍니다. 응답에 수정 폼을 채울 값이 모두 들어 있습니다.",
+ query:[["source","JobSource","N","JOBABA · ADMIN"],["closed","Boolean","N","마감 여부 (관리자 마감이거나 마감일이 지났으면 true)"],["keyword","String","N","회사명·공고 제목"],["page, size","Integer","N","페이지 (size 최대 50)"]],
+ res:{content:[{jobId:5600,source:"ADMIN",company:"(주)시흥테크",title:"사무직 신입 채용",region:"SIHEUNG",address:"경기 시흥시 정왕동",education:"UNIVERSITY",careerLevel:"NEW",employmentType:"FULL_TIME",jobCategory:"OFFICE",salary:"회사 내규",deadline:"2026-11-01",dDay:7,originalUrl:"https://...",closed:false,collectedAt:"2026-11-07T10:00:00"}],page:0,size:20,totalElements:812,totalPages:41,hasNext:true},
+ err:["INVALID_INPUT"]},
 {d:"admin",m:"POST",p:"/admin/jobs",a:"A",pr:2,t:"채용공고 등록",
  desc:"잡아바에 없는 공고(시흥 지역 프로그램 연계 등)나 시연용 공고를 직접 넣습니다. 저장된 공고는 source=ADMIN, created_by=관리자 ID로 맞춤 채용 목록에 수집 공고와 똑같이 나옵니다.",
  body:{company:"(주)시흥테크",title:"사무직 신입 채용",region:"SIHEUNG",address:"경기 시흥시 정왕동",education:"UNIVERSITY",careerLevel:"NEW",employmentType:"FULL_TIME",jobCategory:"OFFICE",salary:"회사 내규",deadline:"2026-11-01",originalUrl:"https://..."},
